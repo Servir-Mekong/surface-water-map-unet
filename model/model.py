@@ -110,7 +110,7 @@ def bce_dice_loss(y_true, y_pred):
 
 
 
-def getModel(inShape, outClasses, dropoutRate=0.2, noise=1, activation='relu', combo='add'):
+def getModel(inShape, outClasses, dropoutRate=0.2, noise=1, activation='relu', combo='add',regression=False):
     inTensor = layers.Input(shape=inShape, name='input')
     inTensor = addFeatures(inTensor)
 
@@ -154,7 +154,14 @@ def getModel(inShape, outClasses, dropoutRate=0.2, noise=1, activation='relu', c
         activation, name="out_block_activation2")(outBranch)
 
     output = layers.Conv2D(outClasses, (1, 1), name='final_conv')(outBranch)
-    output = layers.Activation('softmax', name='final_out')(output)
+    if regression:
+        outActivation = "linear"
+    else:
+        if outClasses == 1:
+            outActivation = "sigmoid"
+        else:
+            outActivation = "softmax"
+    output = layers.Activation(outActivation, name='final_out')(output)
 
     model = models.Model(inputs=[base_in], outputs=[output], name="vgg19-unet")
 

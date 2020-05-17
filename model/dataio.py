@@ -1,38 +1,32 @@
+# -*- coding: utf-8 -*-
 
 from functools import partial
-
-# Tensorflow setup.
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import models
-from tensorflow.keras import layers
-from tensorflow.keras import callbacks
-from tensorflow.keras import backend as K
 
 
 @tf.function
-def parseTfrecord(example_proto, features=None, labels=None, patchShape=None):
+def parse_tfrecord(example_proto, features=None, labels=None, patch_shape=None):
     keys = features + labels
     columns = [
-        tf.io.FixedLenFeature(shape=patchShape, dtype=tf.float32) for k in keys
+        tf.io.FixedLenFeature(shape=patch_shape, dtype=tf.float32) for k in keys
     ]
     proto_struct = dict(zip(keys, columns))
     inputs = tf.io.parse_single_example(example_proto, proto_struct)
-    inputsList = [inputs.get(key) for key in keys]
-    stacked = tf.stack(inputsList, axis=0)
+    inputs_list = [inputs.get(key) for key in keys]
+    stacked = tf.stack(inputs_list, axis=0)
     stacked = tf.transpose(stacked, [1, 2, 0])
     return tf.data.Dataset.from_tensors(stacked)
 
 
 @tf.function
-def toTuple(dataset, nFeatures=None):
-    features = dataset[:, :, :,:nFeatures]
-    labels = dataset[:, :, :, nFeatures:]
+def to_tuple(dataset, n_features=None):
+    features = dataset[:, :, :, :n_features]
+    labels = dataset[:, :, :, n_features:]
     return features, labels
 
 
 @tf.function
-def randomTransform(dataset):
+def random_transform(dataset):
     x = tf.random.uniform(())
 
     if x < 0.10:
@@ -51,29 +45,27 @@ def randomTransform(dataset):
         dataset = tf.image.flip_left_right(tf.image.rot90(dataset, k=2))
     else:
         pass
-
     return dataset
 
 
-def getDataset(files, features, labels, patchShape, batchSize, bufferSize=1000, training=False):
-    parser = partial(parseTfrecord,
+def get_dataset(files, features, labels, patch_shape, batch_size, buffer_size=1000, training=False):
+    parser = partial(parse_tfrecord,
                      features=features,
                      labels=labels,
-                     patchShape=patchShape
+                     patch_shape=patch_shape
                      )
 
-    splitData = partial(toTuple, nFeatures=len(features))
+    split_data = partial(to_tuple, n_features=len(features))
 
     dataset = tf.data.TFRecordDataset(files, compression_type='GZIP')
-    dataset = dataset.interleave(
-        parser, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.interleave(parser, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     if training:
-        dataset = dataset.shuffle(bufferSize, reshuffle_each_iteration=True).batch(batchSize)\
-            .map(randomTransform, num_parallel_calls=tf.data.experimental.AUTOTUNE)\
-            .map(splitData, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        dataset = dataset.shuffle(buffer_size, reshuffle_each_iteration=True)\
+            .batch(batch_size)\
+            .map(random_transform, num_parallel_calls=tf.data.experimental.AUTOTUNE)\
+            .map(split_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     else:
-        dataset = dataset.batch(batchSize).map(
-            splitData, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        dataset = dataset.batch(batch_size).map(split_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     return dataset

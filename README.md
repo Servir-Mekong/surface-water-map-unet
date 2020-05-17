@@ -1,1 +1,1 @@
-# tf-vgg19-unet
+# VGG 19 encoder block with custom UNET decoder block

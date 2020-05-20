@@ -76,9 +76,22 @@ else:
     testing_files = remaining[:val_size]
     validation_files = remaining[val_size:]
 
-    os.mkdir(TRAINING_DIR)
-    os.mkdir(TESTING_DIR)
-    os.mkdir(VALIDATION_DIR)
+    # except for folder exists but no training files
+    try:
+        os.mkdir(TRAINING_DIR)
+    except FileExistsError:
+        print(f'> {TRAINING_DIR} exists, skipping creation...')
+
+    try:
+        os.mkdir(TESTING_DIR)
+    except FileExistsError:
+        print(f'> {TESTING_DIR} exists, skipping creation...')
+
+    try:
+        os.mkdir(VALIDATION_DIR)
+    except FileExistsError:
+        print(f'> {VALIDATION_DIR} exists, skipping creation...')
+
     print('> splitting into TRAINING, TESTING and VALIDATION datasets')
 
     [shutil.copy(str(DATADIR / file), TRAINING_DIR) for file in training_files]

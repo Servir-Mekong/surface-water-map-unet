@@ -48,7 +48,40 @@ def random_transform(dataset):
     return dataset
 
 
-def get_dataset(files, features, labels, patch_shape, batch_size, buffer_size=1000, training=False):
+@tf.function
+def flip_inputs_up_down(inputs):
+    return tf.image.flip_up_down(inputs)
+
+
+@tf.function
+def flip_inputs_left_right(inputs):
+    return tf.image.flip_left_right(inputs)
+
+
+@tf.function
+def transpose_inputs(inputs):
+    flip_up_down = tf.image.flip_up_down(inputs)
+    transpose = tf.image.flip_left_right(flip_up_down)
+    return transpose
+
+
+@tf.function
+def rotate_inputs_90(inputs):
+    return tf.image.rot90(inputs, k=1)
+
+
+@tf.function
+def rotate_inputs_180(inputs):
+    return tf.image.rot90(inputs, k=2)
+
+
+@tf.function
+def rotate_inputs_270(inputs):
+    return tf.image.rot90(inputs, k=3)
+
+
+def get_dataset(files, features, labels, patch_shape, batch_size,
+                buffer_size=1000, training=False, apply_random_transform=False):
     parser = partial(parse_tfrecord,
                      features=features,
                      labels=labels,
@@ -61,10 +94,21 @@ def get_dataset(files, features, labels, patch_shape, batch_size, buffer_size=10
     dataset = dataset.interleave(parser, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     if training:
-        dataset = dataset.shuffle(buffer_size, reshuffle_each_iteration=True)\
-            .batch(batch_size)\
-            .map(random_transform, num_parallel_calls=tf.data.experimental.AUTOTUNE)\
-            .map(split_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        dataset = dataset.shuffle(buffer_size, reshuffle_each_iteration=True).batch(batch_size)
+        if apply_random_transform:
+            dataset = dataset \
+                .map(random_transform, num_parallel_calls=tf.data.experimental.AUTOTUNE) \
+                .map(split_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        else:
+            dataset = dataset \
+                .concatenate(dataset.map(flip_inputs_up_down, num_parallel_calls=tf.data.experimental.AUTOTUNE)) \
+                .concatenate(dataset.map(flip_inputs_left_right, num_parallel_calls=tf.data.experimental.AUTOTUNE)) \
+                .concatenate(dataset.map(transpose_inputs, num_parallel_calls=tf.data.experimental.AUTOTUNE)) \
+                .concatenate(dataset.map(rotate_inputs_90, num_parallel_calls=tf.data.experimental.AUTOTUNE)) \
+                .concatenate(dataset.map(rotate_inputs_180, num_parallel_calls=tf.data.experimental.AUTOTUNE)) \
+                .concatenate(dataset.map(rotate_inputs_270, num_parallel_calls=tf.data.experimental.AUTOTUNE)) \
+                .shuffle(buffer_size=batch_size * 50) \
+                .map(split_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     else:
         dataset = dataset.batch(batch_size).map(split_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 

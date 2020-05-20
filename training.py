@@ -45,11 +45,16 @@ VAL_SIZE = 1354
 
 # Specify model training parameters.
 BATCH_SIZE = 32
-EPOCHS = 20
-BUFFER_SIZE = 3000
+EPOCHS = 50
+BUFFER_SIZE = 10000
 
-# callback monitor parameter
-CALLBACK_PARAMETER = 'epoch_dice_coef'
+# other params w/ notes
+CALLBACK_PARAMETER = 'val_loss'
+RANDOM_TRANSFORM = False
+COMBINATION = 'concat'
+NOTES = f'gaussian before activation\n \
+concat_layers'
+
 
 if os.path.exists(str(TRAINING_DIR)) and os.path.exists(str(TESTING_DIR)) and os.path.exists(str(VALIDATION_DIR)):
     training_files = glob.glob(str(TRAINING_DIR) + '/*')
@@ -79,8 +84,8 @@ else:
 
 # get training, testing, and eval TFRecordDataset
 # training is batched, shuffled, transformed, and repeated
-training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE,
-                              BATCH_SIZE, buffer_size=BUFFER_SIZE, training=True).repeat()
+training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE, BATCH_SIZE,
+                              buffer_size=BUFFER_SIZE, training=True, apply_random_transform=RANDOM_TRANSFORM).repeat()
 # testing is batched by 1 and repeated
 testing = dataio.get_dataset(testing_files, FEATURES, LABELS, PATCH_SHAPE, 1).repeat()
 # eval is batched by 1
@@ -94,7 +99,7 @@ in_shape = PATCH_SHAPE + (len(FEATURES),)
 out_classes = len(LABELS)
 
 # build the model and compile
-my_model = model.build(in_shape, out_classes, distributed_strategy=strategy)
+my_model = model.build(in_shape, out_classes, distributed_strategy=strategy, combo=COMBINATION)
 
 # define callbacks during training
 model_checkpoint = callbacks.ModelCheckpoint(
@@ -107,6 +112,10 @@ early_stopping = keras.callbacks.EarlyStopping(
     mode='auto', restore_best_weights=True
 )
 tensorboard = callbacks.TensorBoard(log_dir=str(MODEL_SAVE_DIR / 'logs'), write_images=True)
+reduce_lr = callbacks.ReduceLROnPlateau(
+    monitor=CALLBACK_PARAMETER, factor=0.1,
+    patience=5, verbose=1
+)
 
 # fit the model
 history = my_model.fit(
@@ -115,7 +124,7 @@ history = my_model.fit(
     steps_per_epoch=(TRAIN_SIZE // BATCH_SIZE),
     validation_data=testing,
     validation_steps=TEST_SIZE,
-    callbacks=[model_checkpoint, tensorboard, early_stopping],
+    callbacks=[model_checkpoint, tensorboard, early_stopping, reduce_lr],
 )
 
 # check how the model trained
@@ -135,6 +144,9 @@ with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:
     f.write(f'CALLBACK_PARAMETER: {CALLBACK_PARAMETER}\n')
     f.write(f'MODEL_NAME: {MODEL_NAME}.h5\n')
     f.write(f'MODEL_CHECKPOINT_NAME: {MODEL_CHECKPOINT_NAME}.h5\n')
+    f.write(f'RANDOM_TRANSFORM: {RANDOM_TRANSFORM}\n')
+    f.write(f'COMBINATION: {COMBINATION}\n')
+    f.write(f'NOTES: {NOTES}\n')
 
 # save the model
 my_model.save(f'{str(MODEL_SAVE_DIR)}/{MODEL_NAME}.h5')

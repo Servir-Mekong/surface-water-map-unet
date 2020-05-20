@@ -22,8 +22,9 @@ def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=
     for j in range(n_convs):
         deconv = conv_layer(n_filters, (3, 3), name=f'{name_prefix}{i}_deconv{j + 1}')(deconv)
         deconv = layers.BatchNormalization(name=f'{name_prefix}{i}_batchnorm{j + 1}')(deconv)
-        deconv = layers.Activation(activation, name=f'{name_prefix}{i}_activation{j + 1}')(deconv)
         deconv = layers.GaussianNoise(stddev=noise, name=f'{name_prefix}{i}_noise{j + 1}')(deconv)
+        deconv = layers.Activation(activation, name=f'{name_prefix}{i}_activation{j + 1}')(deconv)
+        # deconv = layers.GaussianNoise(stddev=noise, name=f'{name_prefix}{i}_noise{j + 1}')(deconv)
 
         if j == 0 and concat_tensor is not None:
             deconv = layers.Dropout(rate=rate, name=f'{name_prefix}{i}_dropout')(deconv)
@@ -104,23 +105,23 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1, activation='relu
 
     decoder0 = decoder_block(
         base_out, n_filters=1028, n_convs=3, i=0,
-        rate=dropout_rate, noise=noise, activation=activation
+        rate=dropout_rate, noise=noise, activation=activation, combo=combo
     )  # 64
     decoder1 = decoder_block(
         decoder0, concat_tensor=concat_tensors[0], n_filters=512, n_convs=3, i=2,
-        rate=dropout_rate, noise=noise, activation=activation
+        rate=dropout_rate, noise=noise, activation=activation, combo=combo
     )
     decoder2 = decoder_block(
         decoder1, concat_tensor=concat_tensors[1], n_filters=512, n_convs=3, i=3,
-        rate=dropout_rate, noise=noise, activation=activation
+        rate=dropout_rate, noise=noise, activation=activation, combo=combo
     )
     decoder3 = decoder_block(
         decoder2, concat_tensor=concat_tensors[2], n_filters=256, n_convs=2, i=4,
-        rate=dropout_rate, noise=noise, activation=activation
+        rate=dropout_rate, noise=noise, activation=activation, combo=combo
     )
     decoder4 = decoder_block(
         decoder3, concat_tensor=concat_tensors[3], n_filters=128, n_convs=2, i=5,
-        rate=dropout_rate, noise=noise, activation=activation
+        rate=dropout_rate, noise=noise, activation=activation, combo=combo
     )
 
     out_branch = conv_layer(64, (3, 3), name=f'out_block_conv1')(decoder4)
@@ -155,13 +156,16 @@ def build(*args, optimizer=None, loss=None, metrics=None, distributed_strategy=N
         optimizer = keras.optimizers.Adam()
 
     if loss is None:
+        #loss = dice_loss
         loss = bce_dice_loss
 
     if metrics is None:
         metrics = [
             keras.metrics.Precision(),
             keras.metrics.Recall(),
+            keras.metrics.get('RootMeanSquaredError'),
             dice_coef,
+            f1_m
         ]
 
     if distributed_strategy is not None:

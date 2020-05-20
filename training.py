@@ -9,6 +9,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import callbacks
 from model import dataio, model
+from utils import file_utils
 
 
 # specify directory as data io info
@@ -25,7 +26,7 @@ MODEL_CHECKPOINT_NAME = 'bestModelWeights'
 try:
     os.mkdir(MODEL_SAVE_DIR)
 except FileExistsError:
-    print(f'{MODEL_SAVE_DIR} exists, skipping creation...')
+    print(f'> {MODEL_SAVE_DIR} exists, skipping creation...')
 
 # specify some data structure
 FEATURES = ['VH', 'VV']
@@ -55,8 +56,9 @@ COMBINATION = 'concat'
 NOTES = f'gaussian before activation\n \
 concat_layers'
 
-
-if os.path.exists(str(TRAINING_DIR)) and os.path.exists(str(TESTING_DIR)) and os.path.exists(str(VALIDATION_DIR)):
+if os.path.exists(str(TRAINING_DIR)) and file_utils.file_num_in_folder(str(TRAINING_DIR)) > 1 and \
+        os.path.exists(str(TESTING_DIR)) and file_utils.file_num_in_folder(str(TESTING_DIR)) > 1 and \
+        os.path.exists(str(VALIDATION_DIR)) and file_utils.file_num_in_folder(str(VALIDATION_DIR)) > 1:
     training_files = glob.glob(str(TRAINING_DIR) + '/*')
     testing_files = glob.glob(str(TRAINING_DIR) + '/*')
     validation_files = glob.glob(str(TRAINING_DIR) + '/*')
@@ -72,11 +74,12 @@ else:
     remaining = files[train_size:]
     np.random.shuffle(files)
     testing_files = remaining[:val_size]
-    validation_files = remaining[val_size:][:5]
+    validation_files = remaining[val_size:]
 
     os.mkdir(TRAINING_DIR)
     os.mkdir(TESTING_DIR)
     os.mkdir(VALIDATION_DIR)
+    print('> splitting into TRAINING, TESTING and VALIDATION datasets')
 
     [shutil.copy(str(DATADIR / file), TRAINING_DIR) for file in training_files]
     [shutil.copy(str(DATADIR / file), TESTING_DIR) for file in testing_files]

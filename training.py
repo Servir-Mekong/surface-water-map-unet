@@ -1,6 +1,7 @@
 import glob
 from pathlib impor Path
 from model import dataio, model
+import tensorflow as tf
 
 
 # specify directory as data io info
@@ -55,11 +56,11 @@ outClasses = len(LABELS)
 myModel = model.build(inShape, outClasses, distributedStrategy=strategy)
 
 # define callbacks during training
-modelCheckpnt = callbacks.ModelCheckpoint(
+modelCheckpnt = tf.keras.callbacks.ModelCheckpoint(
     'bestModelWeights.h5', monitor='val_loss', save_best_only=True, mode='min', verbose=1, save_weights_only=True)
-earlyStop = keras.callbacks.EarlyStopping(
+earlyStop = tf.keras.callbacks.EarlyStopping(
     monitor='val_loss', patience=5, verbose=0, mode='auto', restore_best_weights=True)
-tensorboard = callbacks.TensorBoard(log_dir='./logs', write_images=True)
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir='./logs', write_images=True)
 
 # fit the model
 history = myModel.fit(

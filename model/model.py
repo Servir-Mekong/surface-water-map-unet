@@ -141,7 +141,6 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1,
     out_branch = layers.BatchNormalization(name='out_block_batchnorm2')(out_branch)
     out_branch = layers.Activation(activation, name='out_block_activation2')(out_branch)
 
-    output = layers.Conv2D(out_classes, (1, 1), name='final_conv')(out_branch)
     if regression:
         out_activation = "linear"
     else:
@@ -149,7 +148,8 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1,
             out_activation = "sigmoid"
         else:
             out_activation = "softmax"
-    output = layers.Activation(out_activation, name='final_out')(output)
+
+    output = layers.Conv2D(out_classes, (1, 1), activation=out_activation,name='final_conv')(out_branch)
 
     model = models.Model(inputs=[base_in], outputs=[output], name='vgg19-unet')
 

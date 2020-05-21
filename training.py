@@ -11,7 +11,6 @@ from tensorflow.keras import callbacks
 from model import dataio, model
 from utils import file_utils
 
-
 # specify directory as data io info
 BASEDIR = Path('/Users/biplovbhandari/Works/SIG/hydrafloods')
 DATADIR = BASEDIR / 'data'
@@ -48,6 +47,9 @@ VAL_SIZE = 1354
 BATCH_SIZE = 32
 EPOCHS = 50
 BUFFER_SIZE = 10000
+
+# Learning Rate
+LEARNING_RATE = 0.003
 
 # other params w/ notes
 CALLBACK_PARAMETER = 'val_loss'
@@ -100,8 +102,8 @@ else:
 
 # get training, testing, and eval TFRecordDataset
 # training is batched, shuffled, transformed, and repeated
-training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE, BATCH_SIZE,
-                              buffer_size=BUFFER_SIZE, training=True, apply_random_transform=RANDOM_TRANSFORM).repeat()
+training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE, BATCH_SIZE, buffer_size=BUFFER_SIZE,
+                              training=True, apply_random_transform=RANDOM_TRANSFORM).repeat()
 # testing is batched by 1 and repeated
 testing = dataio.get_dataset(testing_files, FEATURES, LABELS, PATCH_SHAPE, 1).repeat()
 # eval is batched by 1
@@ -115,7 +117,8 @@ in_shape = PATCH_SHAPE + (len(FEATURES),)
 out_classes = len(LABELS)
 
 # build the model and compile
-my_model = model.build(in_shape, out_classes, distributed_strategy=strategy, combo=COMBINATION)
+my_model = model.build(in_shape, out_classes, distributed_strategy=strategy,
+                       learning_rate=LEARNING_RATE, combo=COMBINATION)
 
 # define callbacks during training
 model_checkpoint = callbacks.ModelCheckpoint(
@@ -154,6 +157,7 @@ with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:
     f.write(f'BATCH_SIZE: {BATCH_SIZE}\n')
     f.write(f'EPOCHS: {EPOCHS}\n')
     f.write(f'BUFFER_SIZE: {BUFFER_SIZE}\n')
+    f.write(f'LEARNING_RATE: {LEARNING_RATE}\n')
     f.write(f'FEATURES: {FEATURES}\n')
     f.write(f'LABELS: {LABELS}\n')
     f.write(f'PATCH_SHAPE: {PATCH_SHAPE}\n')

@@ -48,8 +48,9 @@ BATCH_SIZE = 32
 EPOCHS = 50
 BUFFER_SIZE = 10000
 
-# Learning Rate
+# Rates
 LEARNING_RATE = 0.003
+DROPOUT_RATE = 0.15
 
 # other params w/ notes
 CALLBACK_PARAMETER = 'val_loss'
@@ -117,7 +118,7 @@ in_shape = PATCH_SHAPE + (len(FEATURES),)
 out_classes = len(LABELS)
 
 # build the model and compile
-my_model = model.build(in_shape, out_classes, distributed_strategy=strategy,
+my_model = model.build(in_shape, out_classes, distributed_strategy=strategy, dropout_rate=DROPOUT_RATE,
                        learning_rate=LEARNING_RATE, combo=COMBINATION)
 
 # define callbacks during training
@@ -158,6 +159,7 @@ with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:
     f.write(f'EPOCHS: {EPOCHS}\n')
     f.write(f'BUFFER_SIZE: {BUFFER_SIZE}\n')
     f.write(f'LEARNING_RATE: {LEARNING_RATE}\n')
+    f.write(f'DROPOUT_RATE: {DROPOUT_RATE}\n')
     f.write(f'FEATURES: {FEATURES}\n')
     f.write(f'LABELS: {LABELS}\n')
     f.write(f'PATCH_SHAPE: {PATCH_SHAPE}\n')

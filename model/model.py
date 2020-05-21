@@ -16,8 +16,8 @@ conv_layer = partial(layers.Conv2D,
                      )
 
 
-def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=0,
-                  name_prefix='decoder_block', rate=0.2, noise=1, activation='relu', combo='add'):
+def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=0, rate=0.2,
+                  name_prefix='decoder_block', noise=1, activation='relu', combo='add', **kwargs):
     deconv = input_tensor
     for j in range(n_convs):
         deconv = conv_layer(n_filters, (3, 3), name=f'{name_prefix}{i}_deconv{j + 1}')(deconv)
@@ -32,6 +32,10 @@ def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=
                 deconv = layers.add([deconv, concat_tensor], name=f'{name_prefix}{i}_residual')
             elif combo == 'concat':
                 deconv = layers.concatenate([deconv, concat_tensor], name=f'{name_prefix}{i}_concat')
+        else:
+            apply_random_transform = kwargs.get('apply_random_transform', False)
+            if not apply_random_transform:
+                deconv = layers.Dropout(rate=rate, name=f'{name_prefix}{i}_{j}_dropout')(deconv)
 
     up = layers.UpSampling2D(interpolation='bilinear', name=f'{name_prefix}{i}_upsamp')(deconv)
     return up
@@ -92,7 +96,8 @@ def bce_dice_loss(y_true, y_pred):
     return keras.losses.binary_crossentropy(y_true, y_pred, label_smoothing=0.2) + dice_loss(y_true, y_pred)
 
 
-def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1, activation='relu', combo='add', regression=False):
+def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1,
+              activation='relu',combo='add', regression=False, **kwargs):
     in_tensor = layers.Input(shape=in_shape, name='input')
     in_tensor = add_features(in_tensor)
 
@@ -104,24 +109,24 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1, activation='relu
     concat_tensors = [vgg19.get_layer(layer).output for layer in concat_layers]
 
     decoder0 = decoder_block(
-        base_out, n_filters=1028, n_convs=3, i=0,
-        rate=dropout_rate, noise=noise, activation=activation, combo=combo
+        base_out, n_filters=1028, n_convs=3, noise=noise,
+        i=0, rate=dropout_rate, activation=activation, combo=combo, **kwargs
     )  # 64
     decoder1 = decoder_block(
-        decoder0, concat_tensor=concat_tensors[0], n_filters=512, n_convs=3, i=2,
-        rate=dropout_rate, noise=noise, activation=activation, combo=combo
+        decoder0, concat_tensor=concat_tensors[0], n_filters=512, n_convs=3, noise=noise,
+        i=1, rate=dropout_rate, activation=activation, combo=combo, **kwargs
     )
     decoder2 = decoder_block(
-        decoder1, concat_tensor=concat_tensors[1], n_filters=512, n_convs=3, i=3,
-        rate=dropout_rate, noise=noise, activation=activation, combo=combo
+        decoder1, concat_tensor=concat_tensors[1], n_filters=512, n_convs=3, noise=noise,
+        i=2, rate=dropout_rate, activation=activation, combo=combo, **kwargs
     )
     decoder3 = decoder_block(
-        decoder2, concat_tensor=concat_tensors[2], n_filters=256, n_convs=2, i=4,
-        rate=dropout_rate, noise=noise, activation=activation, combo=combo
+        decoder2, concat_tensor=concat_tensors[2], n_filters=256, n_convs=2,  noise=noise,
+        i=3, rate=dropout_rate, activation=activation, combo=combo, **kwargs
     )
     decoder4 = decoder_block(
-        decoder3, concat_tensor=concat_tensors[3], n_filters=128, n_convs=2, i=5,
-        rate=dropout_rate, noise=noise, activation=activation, combo=combo
+        decoder3, concat_tensor=concat_tensors[3], n_filters=128, n_convs=2, noise=noise,
+        i=4, rate=dropout_rate, activation=activation, combo=combo, **kwargs
     )
 
     out_branch = conv_layer(64, (3, 3), name=f'out_block_conv1')(decoder4)
@@ -151,8 +156,9 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1, activation='relu
     return model
 
 
-def build(*args, optimizer=None, loss=None, metrics=None, distributed_strategy=None, learning_rate=0.001, **kwargs):
+def build(*args, optimizer=None, loss=None, metrics=None, distributed_strategy=None, **kwargs):
     if optimizer is None:
+        learning_rate = kwargs.get('learning_rate', 0.001)
         optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
 
     if loss is None:

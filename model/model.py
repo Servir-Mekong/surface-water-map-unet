@@ -151,8 +151,9 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1, activation='relu
     return model
 
 
-def build(*args, optimizer=None, loss=None, metrics=None, distributed_strategy=None, learning_rate=0.001, **kwargs):
+def build(*args, optimizer=None, loss=None, metrics=None, distributed_strategy=None, **kwargs):
     if optimizer is None:
+        learning_rate = kwargs.get('learning_rate', 0.001)
         optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
 
     if loss is None:

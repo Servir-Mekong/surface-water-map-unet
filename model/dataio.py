@@ -81,7 +81,7 @@ def rotate_inputs_270(inputs):
 
 
 def get_dataset(files, features, labels, patch_shape, batch_size,
-                buffer_size=1000, training=False, apply_random_transform=False):
+                buffer_size=1000, training=False, **kwargs):
     parser = partial(parse_tfrecord,
                      features=features,
                      labels=labels,
@@ -95,6 +95,7 @@ def get_dataset(files, features, labels, patch_shape, batch_size,
 
     if training:
         dataset = dataset.shuffle(buffer_size, reshuffle_each_iteration=True).batch(batch_size)
+        apply_random_transform = kwargs.get('apply_random_transform', False)
         if apply_random_transform:
             dataset = dataset \
                 .map(random_transform, num_parallel_calls=tf.data.experimental.AUTOTUNE) \

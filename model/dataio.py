@@ -108,7 +108,6 @@ def get_dataset(files, features, labels, patch_shape, batch_size,
                 .concatenate(dataset.map(rotate_inputs_90, num_parallel_calls=tf.data.experimental.AUTOTUNE)) \
                 .concatenate(dataset.map(rotate_inputs_180, num_parallel_calls=tf.data.experimental.AUTOTUNE)) \
                 .concatenate(dataset.map(rotate_inputs_270, num_parallel_calls=tf.data.experimental.AUTOTUNE)) \
-                .shuffle(buffer_size=batch_size * 50) \
                 .map(split_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     else:
         dataset = dataset.batch(batch_size).map(split_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)

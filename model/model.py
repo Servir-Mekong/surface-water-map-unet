@@ -97,7 +97,7 @@ def bce_dice_loss(y_true, y_pred):
 
 
 def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1,
-              activation='relu',combo='add', regression=False, **kwargs):
+              activation='relu',combo='add', **kwargs):
     in_tensor = layers.Input(shape=in_shape, name='input')
     in_tensor = add_features(in_tensor)
 
@@ -141,18 +141,9 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1,
     out_branch = layers.BatchNormalization(name='out_block_batchnorm2')(out_branch)
     out_branch = layers.Activation(activation, name='out_block_activation2')(out_branch)
 
-    if regression:
-        out_activation = "linear"
-    else:
-        if out_classes == 1:
-            out_activation = "sigmoid"
-        else:
-            out_activation = "softmax"
-
-    output = layers.Conv2D(out_classes, (1, 1), activation=out_activation,name='final_conv')(out_branch)
-
+    out_activation = kwargs.get('out_activation', 'sigmoid')
+    output = layers.Conv2D(out_classes, (1, 1), activation=out_activation, name='final_conv')(out_branch)
     model = models.Model(inputs=[base_in], outputs=[output], name='vgg19-unet')
-
     return model
 
 
@@ -162,14 +153,15 @@ def build(*args, optimizer=None, loss=None, metrics=None, distributed_strategy=N
         optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
 
     if loss is None:
-        #loss = dice_loss
-        loss = bce_dice_loss
+        # loss = dice_loss
+        # loss = bce_dice_loss
+        loss = keras.losses.BinaryCrossentropy(from_logits=True)
 
     if metrics is None:
         metrics = [
+            keras.metrics.Accuracy(),
             keras.metrics.Precision(),
             keras.metrics.Recall(),
-            keras.metrics.get('RootMeanSquaredError'),
             dice_coef,
             f1_m
         ]

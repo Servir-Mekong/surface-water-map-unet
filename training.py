@@ -49,15 +49,17 @@ EPOCHS = 50
 BUFFER_SIZE = 10000
 
 # Rates
-LEARNING_RATE = 0.003
-DROPOUT_RATE = 0.15
+LEARNING_RATE = 0.001
+DROPOUT_RATE = 0.2
 
 # other params w/ notes
+ACTIVATION_FN = 'softmax'
 CALLBACK_PARAMETER = 'val_loss'
-RANDOM_TRANSFORM = False
+RANDOM_TRANSFORM = True
 COMBINATION = 'concat'
 NOTES = f'gaussian before activation\n \
-concat_layers'
+concat_layers\n \
+binary_cross_entropy with logit'
 
 if os.path.exists(str(TRAINING_DIR)) and file_utils.file_num_in_folder(str(TRAINING_DIR)) > 1 and \
         os.path.exists(str(TESTING_DIR)) and file_utils.file_num_in_folder(str(TESTING_DIR)) > 1 and \
@@ -119,7 +121,7 @@ out_classes = len(LABELS)
 
 # build the model and compile
 my_model = model.build(in_shape, out_classes, distributed_strategy=strategy, dropout_rate=DROPOUT_RATE,
-                       learning_rate=LEARNING_RATE, combo=COMBINATION)
+                       learning_rate=LEARNING_RATE, combo=COMBINATION, out_activation=ACTIVATION_FN)
 
 # define callbacks during training
 model_checkpoint = callbacks.ModelCheckpoint(
@@ -132,10 +134,6 @@ early_stopping = keras.callbacks.EarlyStopping(
     mode='auto', restore_best_weights=True
 )
 tensorboard = callbacks.TensorBoard(log_dir=str(MODEL_SAVE_DIR / 'logs'), write_images=True)
-reduce_lr = callbacks.ReduceLROnPlateau(
-    monitor=CALLBACK_PARAMETER, factor=0.1,
-    patience=5, verbose=1
-)
 
 # fit the model
 history = my_model.fit(
@@ -144,7 +142,7 @@ history = my_model.fit(
     steps_per_epoch=(TRAIN_SIZE // BATCH_SIZE),
     validation_data=testing,
     validation_steps=TEST_SIZE,
-    callbacks=[model_checkpoint, tensorboard, early_stopping, reduce_lr],
+    callbacks=[model_checkpoint, tensorboard, early_stopping],
 )
 
 # check how the model trained
@@ -160,6 +158,7 @@ with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:
     f.write(f'BUFFER_SIZE: {BUFFER_SIZE}\n')
     f.write(f'LEARNING_RATE: {LEARNING_RATE}\n')
     f.write(f'DROPOUT_RATE: {DROPOUT_RATE}\n')
+    f.write(f'ACTIVATION_FN: {ACTIVATION_FN}\n')
     f.write(f'FEATURES: {FEATURES}\n')
     f.write(f'LABELS: {LABELS}\n')
     f.write(f'PATCH_SHAPE: {PATCH_SHAPE}\n')

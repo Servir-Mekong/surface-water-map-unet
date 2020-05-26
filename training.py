@@ -77,7 +77,7 @@ else:
     np.random.shuffle(files)
     training_files = files[:train_size]
     remaining = files[train_size:]
-    np.random.shuffle(files)
+    np.random.shuffle(remaining)
     testing_files = remaining[:val_size]
     validation_files = remaining[val_size:]
 

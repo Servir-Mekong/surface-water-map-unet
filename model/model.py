@@ -97,7 +97,7 @@ def bce_dice_loss(y_true, y_pred):
 
 
 def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1,
-              activation='relu',combo='add', **kwargs):
+              activation='relu', combo='add', **kwargs):
     in_tensor = layers.Input(shape=in_shape, name='input')
     in_tensor = add_features(in_tensor)
 

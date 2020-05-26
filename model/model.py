@@ -23,9 +23,8 @@ def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=
     for j in range(n_convs):
         deconv = conv_layer(n_filters, (3, 3), name=f'{name_prefix}{i}_deconv{j + 1}')(deconv)
         deconv = layers.BatchNormalization(name=f'{name_prefix}{i}_batchnorm{j + 1}')(deconv)
-        deconv = layers.GaussianNoise(stddev=noise, name=f'{name_prefix}{i}_noise{j + 1}')(deconv)
         deconv = layers.Activation(activation, name=f'{name_prefix}{i}_activation{j + 1}')(deconv)
-        # deconv = layers.GaussianNoise(stddev=noise, name=f'{name_prefix}{i}_noise{j + 1}')(deconv)
+        deconv = layers.GaussianNoise(stddev=noise, name=f'{name_prefix}{i}_noise{j + 1}')(deconv)
 
         if j == 0 and concat_tensor is not None:
             deconv = layers.Dropout(rate=rate, name=f'{name_prefix}{i}_dropout')(deconv)
@@ -33,10 +32,6 @@ def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=
                 deconv = layers.add([deconv, concat_tensor], name=f'{name_prefix}{i}_residual')
             elif combo == 'concat':
                 deconv = layers.concatenate([deconv, concat_tensor], name=f'{name_prefix}{i}_concat')
-        else:
-            apply_random_transform = kwargs.get('apply_random_transform', False)
-            if not apply_random_transform:
-                deconv = layers.Dropout(rate=rate, name=f'{name_prefix}{i}_{j}_dropout')(deconv)
 
     up = layers.UpSampling2D(interpolation='bilinear', name=f'{name_prefix}{i}_upsamp')(deconv)
     return up

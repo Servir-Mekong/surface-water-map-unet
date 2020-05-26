@@ -40,7 +40,6 @@ BUFFER_SIZE = 10000
 
 # other params w/ notes
 CALLBACK_PARAMETER = 'val_loss'
-RANDOM_TRANSFORM = True
 
 # get list of files for training, testing and eval
 training_files = glob.glob(str(TRAINING_DIR) + '/*')
@@ -49,8 +48,8 @@ validation_files = glob.glob(str(TRAINING_DIR) + '/*')
 
 # get training, testing, and eval TFRecordDataset
 # training is batched, shuffled, transformed, and repeated
-training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE, BATCH_SIZE, buffer_size=BUFFER_SIZE,
-                              training=True, apply_random_transform=RANDOM_TRANSFORM).repeat()
+training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE, BATCH_SIZE,
+                              buffer_size=BUFFER_SIZE, training=True).repeat()
 # testing is batched by 1 and repeated
 testing = dataio.get_dataset(testing_files, FEATURES, LABELS, PATCH_SHAPE, 1).repeat()
 # eval is batched by 1
@@ -72,18 +71,25 @@ get_model = partial(model.get_model, in_shape=in_shape, out_classes=out_classes)
 def build_tuner(hp):
     with strategy.scope():
         # build the model with parameters
-        my_model = get_model(dropout_rate=hp.Float('dropout_rate', min_value=0.1, max_value=0.5, step=0.05),
-                             noise=hp.Float('noise', min_value=0.2, max_value=2.0, step=0.2),
-                             activation=hp.Choice('activation', values=['relu', 'elu']),
-                             out_activation=hp.Choice('out_activation', values=['sigmoid', 'softmax']),
-                             combo=hp.Choice('combo', values=['add', 'concat']),
-                             apply_random_transform=hp.Boolean('apply_random_transform', default=RANDOM_TRANSFORM),
-                             )
+        # dropout_rate = hp.Float('dropout_rate', min_value=0.1, max_value=0.5, step=0.05),
+        # noise = hp.Float('noise', min_value=0.2, max_value=2.0, step=0.2),
+        # activation = hp.Choice('activation', values=['relu', 'elu']),
+        # out_activation = hp.Choice('out_activation', values=['sigmoid', 'softmax']),
+        # combo = hp.Choice('combo', values=['add', 'concat']),
 
+        my_model = get_model()
+
+        bce_dice_loss = partial(model.bce_dice_loss)
+        dice_loss = partial(model.dice_loss)
+        binary_crossentropy = partial(keras.losses.BinaryCrossentropy, from_logits=True, label_smoothing=0.5)
         # compile model
         my_model.compile(
-            optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4])),
-            loss=model.bce_dice_loss,
+            optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5])),
+            loss=hp.Choice('loss', values=[
+                bce_dice_loss,
+                dice_loss,
+                binary_crossentropy
+            ]),
             metrics=[
                 keras.metrics.categorical_accuracy,
                 keras.metrics.Accuracy(),
@@ -106,7 +112,7 @@ tuner = kt.RandomSearch(
 )
 
 # set early stopping to prevent long running models
-early_stopping = tf.keras.callbacks.EarlyStopping(
+early_stopping = keras.callbacks.EarlyStopping(
     monitor=CALLBACK_PARAMETER, patience=5, verbose=0,
     mode='auto', restore_best_weights=True
 )

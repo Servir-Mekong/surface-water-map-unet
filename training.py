@@ -6,7 +6,6 @@ from pathlib import Path
 import os
 import shutil
 import tensorflow as tf
-from tensorflow import keras
 from tensorflow.keras import callbacks
 from model import dataio, model
 from utils import file_utils
@@ -55,11 +54,8 @@ DROPOUT_RATE = 0.2
 # other params w/ notes
 ACTIVATION_FN = 'softmax'
 CALLBACK_PARAMETER = 'val_loss'
-RANDOM_TRANSFORM = True
 COMBINATION = 'concat'
-NOTES = f'gaussian before activation\n \
-concat_layers\n \
-binary_cross_entropy with logit'
+NOTES = f'binary_cross_entropy with logit'
 
 if os.path.exists(str(TRAINING_DIR)) and file_utils.file_num_in_folder(str(TRAINING_DIR)) > 1 and \
         os.path.exists(str(TESTING_DIR)) and file_utils.file_num_in_folder(str(TESTING_DIR)) > 1 and \
@@ -105,8 +101,8 @@ else:
 
 # get training, testing, and eval TFRecordDataset
 # training is batched, shuffled, transformed, and repeated
-training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE, BATCH_SIZE, buffer_size=BUFFER_SIZE,
-                              training=True, apply_random_transform=RANDOM_TRANSFORM).repeat()
+training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE, BATCH_SIZE,
+                              buffer_size=BUFFER_SIZE, training=True).repeat()
 # testing is batched by 1 and repeated
 testing = dataio.get_dataset(testing_files, FEATURES, LABELS, PATCH_SHAPE, 1).repeat()
 # eval is batched by 1
@@ -129,7 +125,7 @@ model_checkpoint = callbacks.ModelCheckpoint(
     monitor=CALLBACK_PARAMETER, save_best_only=True,
     mode='min', verbose=1, save_weights_only=True
 )
-early_stopping = keras.callbacks.EarlyStopping(
+early_stopping = callbacks.EarlyStopping(
     monitor=CALLBACK_PARAMETER, patience=5, verbose=0,
     mode='auto', restore_best_weights=True
 )
@@ -165,7 +161,6 @@ with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:
     f.write(f'CALLBACK_PARAMETER: {CALLBACK_PARAMETER}\n')
     f.write(f'MODEL_NAME: {MODEL_NAME}.h5\n')
     f.write(f'MODEL_CHECKPOINT_NAME: {MODEL_CHECKPOINT_NAME}.h5\n')
-    f.write(f'RANDOM_TRANSFORM: {RANDOM_TRANSFORM}\n')
     f.write(f'COMBINATION: {COMBINATION}\n')
     f.write(f'NOTES: {NOTES}\n')
 

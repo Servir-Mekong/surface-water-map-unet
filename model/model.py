@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from functools import partial
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import models
 from tensorflow.keras import layers
@@ -43,16 +44,22 @@ def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=
 
 def add_features(input_tensor):
     def normalized_difference(c1, c2, name='nd'):
-        return layers.Lambda(lambda x: ((x[0] - x[1]) / (x[0] + x[1] + 1e-7)), name=name)([c1, c2])
+        nd_f = layers.Lambda(lambda x: ((x[0] - x[1]) / (x[0] + x[1])), name=name)([c1, c2])
+        nd_inf = layers.Lambda(lambda x: ((x[0] - x[1]) / (x[0] + x[1] + 1e-7)), name=f'{name}_inf')([c1, c2])
+        return tf.where(tf.math.is_finite(nd_f), nd_f, nd_inf)
 
     def ratio(c1, c2, name='ratio'):
-        return layers.Lambda(lambda x: x[0] / x[1], name=name)([c1, c2])
+        ratio_f = layers.Lambda(lambda x: x[0] / x[1], name=name)([c1, c2])
+        ratio_inf = layers.Lambda(lambda x: x[0] / (x[1] + 1e-7), name=f'{name}_inf')([c1, c2])
+        return tf.where(tf.math.is_finite(ratio_f), ratio_f, ratio_inf)
 
     def nvi(c1, c2, name='nvi'):
-        return layers.Lambda(lambda x: x[0] / (x[0] + x[1]), name=name)([c1, c2])
+        nvi_f = layers.Lambda(lambda x: x[0] / (x[0] + x[1]), name=name)([c1, c2])
+        nvi_inf = layers.Lambda(lambda x: x[0] / (x[0] + x[1] + 1e-7), name=f'{name}_inf')([c1, c2])
+        return tf.where(tf.math.is_finite(nvi_f), nvi_f, nvi_inf)
 
     nd = normalized_difference(input_tensor[:, :, :, 0:1], input_tensor[:, :, :, 1:2])  # vh, vv
-    ratio = ratio(input_tensor[:, :, :, 1:2], input_tensor[:, :, :, 0:1])  # vv, vv
+    ratio = ratio(input_tensor[:, :, :, 1:2], input_tensor[:, :, :, 0:1])  # vv, vh
     nvhi = nvi(input_tensor[:, :, :, 0:1], input_tensor[:, :, :, 1:2], name='nvhi')  # vh, vv
     nvvi = nvi(input_tensor[:, :, :, 1:2], input_tensor[:, :, :, 0:1], name='nvvi')  # vv, vh
     return layers.concatenate([input_tensor, nd, ratio, nvhi, nvvi], name='input_features')

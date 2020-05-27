@@ -11,12 +11,12 @@ from model import dataio, model
 from utils import file_utils
 
 # specify directory as data io info
-BASEDIR = Path('/Users/biplovbhandari/Works/SIG/hydrafloods')
+BASEDIR = Path('/data/kmarkert/s1Water/jrcWater/')
 DATADIR = BASEDIR / 'data'
-TRAINING_DIR = BASEDIR / 'training'
-TESTING_DIR = BASEDIR / 'testing'
-VALIDATION_DIR = BASEDIR / 'validation'
-OUTPUT_DIR = BASEDIR / 'output'
+TRAINING_DIR = BASEDIR / 'training_patches'
+TESTING_DIR = BASEDIR / 'testing_patches'
+VALIDATION_DIR = BASEDIR / 'val_patches'
+OUTPUT_DIR = Path('./output')
 MODEL_SAVE_DIR = OUTPUT_DIR / 'attempt1'
 MODEL_NAME = 'vgg19_custom_unet_model'
 MODEL_CHECKPOINT_NAME = 'bestModelWeights'
@@ -43,9 +43,9 @@ TEST_SIZE = 2709
 VAL_SIZE = 1354
 
 # Specify model training parameters.
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 EPOCHS = 50
-BUFFER_SIZE = 10000
+BUFFER_SIZE = 9500
 
 # Rates
 LEARNING_RATE = 0.001
@@ -112,8 +112,8 @@ eval = dataio.get_dataset(validation_files, FEATURES, LABELS, PATCH_SHAPE, 1)
 strategy = tf.distribute.MirroredStrategy()
 
 # define tensor input shape and number of classes
-in_shape = PATCH_SHAPE + (len(FEATURES),)
-out_classes = len(LABELS)
+in_shape = (None,None) + (len(FEATURES),)
+out_classes = 2
 
 # build the model and compile
 my_model = model.build(in_shape, out_classes, distributed_strategy=strategy, dropout_rate=DROPOUT_RATE,
@@ -143,6 +143,11 @@ history = my_model.fit(
 
 # check how the model trained
 my_model.evaluate(eval)
+
+
+fresh_model = model.get_model(in_shape, out_classes, dropout_rate=DROPOUT_RATE,
+                           learning_rate=LEARNING_RATE, combo=COMBINATION, out_activation=ACTIVATION_FN)
+fresh_model.load_weights(f'{str(MODEL_SAVE_DIR)}/{MODEL_CHECKPOINT_NAME}.h5')
 
 # save the parameters
 with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:

@@ -10,11 +10,11 @@ import kerastuner as kt
 
 
 # specify directory as data io info
-BASEDIR = Path('/Users/biplovbhandari/Works/SIG/hydrafloods')
-TRAINING_DIR = BASEDIR / 'training'
-TESTING_DIR = BASEDIR / 'testing'
-VALIDATION_DIR = BASEDIR / 'validation'
-OUTPUT_DIR = BASEDIR / 'output'
+BASEDIR = Path('/data/kmarkert/s1Water/jrcWater/')
+TRAINING_DIR = BASEDIR / 'training_patches'
+TESTING_DIR = BASEDIR / 'testing_patches'
+VALIDATION_DIR = BASEDIR / 'validation_patches'
+OUTPUT_DIR = Path('./output')
 MODEL_SAVE_DIR = OUTPUT_DIR / 'hyperopt-attempt1'
 
 # specify some data structure
@@ -34,9 +34,9 @@ TEST_SIZE = 2709
 VAL_SIZE = 1354
 
 # Specify model training parameters.
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 EPOCHS = 50
-BUFFER_SIZE = 10000
+BUFFER_SIZE = 9500
 
 # get list of files for training, testing and eval
 training_files = glob.glob(str(TRAINING_DIR) + '/*')
@@ -60,7 +60,7 @@ in_shape = PATCH_SHAPE + (len(FEATURES),)
 out_classes = len(LABELS)
 
 # partial function to pass keywords to for hyper-parameter tuning
-get_model = partial(model.get_model, in_shape=in_shape, out_classes=out_classes)
+get_model = partial(model.get_model, in_shape=in_shape, out_classes=2)
 
 
 # function to build model for hp tuning
@@ -77,7 +77,7 @@ def build_tuner(hp):
         my_model = get_model()
 
         loss_options = {
-            'bce': keras.losses.BinaryCrossentropy(label_smoothing=0.2),
+            'bce': model.bce_loss,
             'dice': model.dice_loss,
             'bce_dice': model.bce_dice_loss,
         }

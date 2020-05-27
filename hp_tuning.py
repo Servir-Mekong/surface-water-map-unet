@@ -79,12 +79,12 @@ def build_tuner(hp):
 
         my_model = get_model()
 
-        loss_options = {'bce':partial(keras.losses.binary_crossentropy(label_smoothing=0.2)),'dice':model.dice_loss,'bce_dice':model.bce_dice_loss}
+        loss_options = {'bce':keras.losses.BinaryCrossentropy(label_smoothing=0.2),'dice':model.dice_loss,'bce_dice':model.bce_dice_loss}
 
         # compile model
         my_model.compile(
             optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5])),
-            loss=loss_options[hp.Choice('loss'['bce','dice','bce_dice'])],
+            loss=loss_options[hp.Choice('loss',['bce','dice','bce_dice'])],
             metrics=[
                 keras.metrics.categorical_accuracy,
                 keras.metrics.Accuracy(),

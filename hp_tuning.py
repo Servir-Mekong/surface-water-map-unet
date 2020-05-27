@@ -38,9 +38,6 @@ BATCH_SIZE = 32
 EPOCHS = 50
 BUFFER_SIZE = 10000
 
-# other params w/ notes
-CALLBACK_PARAMETER = 'val_loss'
-
 # get list of files for training, testing and eval
 training_files = glob.glob(str(TRAINING_DIR) + '/*')
 testing_files = glob.glob(str(TRAINING_DIR) + '/*')
@@ -96,10 +93,10 @@ def build_tuner(hp):
             loss=loss_options[hp.Choice('loss', ['bce', 'dice', 'bce_dice'])],
             metrics=[
                 keras.metrics.categorical_accuracy,
-                keras.metrics.Accuracy(),
                 keras.metrics.Precision(),
                 keras.metrics.Recall(),
                 model.dice_coef,
+                model.f1_m
             ]
         )
     return my_model
@@ -107,7 +104,7 @@ def build_tuner(hp):
 
 tuner = kt.RandomSearch(
     build_tuner,
-    objective='val_accuracy',
+    objective=kt.Objective('val_f1_m', direction='max'),
     max_trials=10,
     executions_per_trial=2,
     seed=0,
@@ -117,7 +114,7 @@ tuner = kt.RandomSearch(
 
 # set early stopping to prevent long running models
 early_stopping = keras.callbacks.EarlyStopping(
-    monitor=CALLBACK_PARAMETER, patience=5, verbose=0,
+    monitor='val_loss', patience=5, verbose=0,
     mode='auto', restore_best_weights=True
 )
 

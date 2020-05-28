@@ -34,7 +34,7 @@ TEST_SIZE = 2709
 VAL_SIZE = 1354
 
 # Specify model training parameters.
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 EPOCHS = 50
 BUFFER_SIZE = 9500
 

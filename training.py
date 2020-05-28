@@ -55,7 +55,6 @@ DROPOUT_RATE = 0.2
 ACTIVATION_FN = 'softmax'
 CALLBACK_PARAMETER = 'val_loss'
 COMBINATION = 'concat'
-NOTES = f'binary_cross_entropy with logit'
 
 if os.path.exists(str(TRAINING_DIR)) and file_utils.file_num_in_folder(str(TRAINING_DIR)) > 1 and \
         os.path.exists(str(TESTING_DIR)) and file_utils.file_num_in_folder(str(TESTING_DIR)) > 1 and \
@@ -162,7 +161,6 @@ with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:
     f.write(f'MODEL_NAME: {MODEL_NAME}.h5\n')
     f.write(f'MODEL_CHECKPOINT_NAME: {MODEL_CHECKPOINT_NAME}.h5\n')
     f.write(f'COMBINATION: {COMBINATION}\n')
-    f.write(f'NOTES: {NOTES}\n')
 
 # save the model
 my_model.save(f'{str(MODEL_SAVE_DIR)}/{MODEL_NAME}.h5')

@@ -10,11 +10,11 @@ import kerastuner as kt
 
 
 # specify directory as data io info
-BASEDIR = Path('/data/kmarkert/s1Water/jrcWater/')
+BASEDIR = Path('/Users/biplovbhandari/Works/SIG/hydrafloods')
 TRAINING_DIR = BASEDIR / 'training_patches'
 TESTING_DIR = BASEDIR / 'testing_patches'
 VALIDATION_DIR = BASEDIR / 'validation_patches'
-OUTPUT_DIR = Path('./output')
+OUTPUT_DIR = BASEDIR / 'output'
 MODEL_SAVE_DIR = OUTPUT_DIR / 'hyperopt-attempt1'
 
 # specify some data structure
@@ -34,7 +34,7 @@ TEST_SIZE = 2709
 VAL_SIZE = 1354
 
 # Specify model training parameters.
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 EPOCHS = 50
 BUFFER_SIZE = 9500
 

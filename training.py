@@ -11,12 +11,12 @@ from model import dataio, model
 from utils import file_utils
 
 # specify directory as data io info
-BASEDIR = Path('/data/kmarkert/s1Water/jrcWater/')
+BASEDIR = Path('/Users/biplovbhandari/Works/SIG/hydrafloods')
 DATADIR = BASEDIR / 'data'
 TRAINING_DIR = BASEDIR / 'training_patches'
 TESTING_DIR = BASEDIR / 'testing_patches'
-VALIDATION_DIR = BASEDIR / 'val_patches'
-OUTPUT_DIR = Path('./output')
+VALIDATION_DIR = BASEDIR / 'validation_patches'
+OUTPUT_DIR = BASEDIR / 'output'
 MODEL_SAVE_DIR = OUTPUT_DIR / 'attempt1'
 MODEL_NAME = 'vgg19_custom_unet_model'
 MODEL_CHECKPOINT_NAME = 'bestModelWeights'
@@ -43,7 +43,7 @@ TEST_SIZE = 2709
 VAL_SIZE = 1354
 
 # Specify model training parameters.
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 EPOCHS = 50
 BUFFER_SIZE = 9500
 
@@ -112,7 +112,7 @@ eval = dataio.get_dataset(validation_files, FEATURES, LABELS, PATCH_SHAPE, 1)
 strategy = tf.distribute.MirroredStrategy()
 
 # define tensor input shape and number of classes
-in_shape = (None,None) + (len(FEATURES),)
+in_shape = (None, None) + (len(FEATURES),)
 out_classes = 2
 
 # build the model and compile
@@ -144,11 +144,6 @@ history = my_model.fit(
 # check how the model trained
 my_model.evaluate(eval)
 
-
-fresh_model = model.get_model(in_shape, out_classes, dropout_rate=DROPOUT_RATE,
-                           learning_rate=LEARNING_RATE, combo=COMBINATION, out_activation=ACTIVATION_FN)
-fresh_model.load_weights(f'{str(MODEL_SAVE_DIR)}/{MODEL_CHECKPOINT_NAME}.h5')
-
 # save the parameters
 with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:
     f.write(f'TRAIN_SIZE: {TRAIN_SIZE}\n')
@@ -171,3 +166,11 @@ with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:
 
 # save the model
 my_model.save(f'{str(MODEL_SAVE_DIR)}/{MODEL_NAME}.h5')
+
+# open and save model
+this_model = model.get_model(in_shape, out_classes, dropout_rate=DROPOUT_RATE,
+                             learning_rate=LEARNING_RATE, combo=COMBINATION, out_activation=ACTIVATION_FN)
+this_model.load_weights(f'{str(MODEL_SAVE_DIR)}/{MODEL_CHECKPOINT_NAME}.h5')
+
+print(this_model.summary())
+tf.keras.models.save_model(this_model, str(MODEL_SAVE_DIR), save_format='tf')

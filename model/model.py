@@ -97,6 +97,7 @@ def dice_loss(y_true, y_pred, smooth=1):
 def bce_dice_loss(y_true, y_pred):
     return keras.losses.binary_crossentropy(y_true, y_pred, label_smoothing=0.2) + dice_loss(y_true, y_pred)
 
+
 def bce_loss(y_true,y_pred):
     return keras.losses.binary_crossentropy(y_true, y_pred, label_smoothing=0.2)
 
@@ -146,8 +147,8 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1,
     out_branch = layers.BatchNormalization(name='out_block_batchnorm2')(out_branch)
     out_branch = layers.Activation(activation, name='out_block_activation2')(out_branch)
 
-    out_activation = kwargs.get('out_activation', 'sigmoid')
-    output = layers.Conv2D(out_classes, (1, 1), activation='softmax', name='final_conv')(out_branch)
+    out_activation = kwargs.get('out_activation', 'softmax')
+    output = layers.Conv2D(out_classes, (1, 1), activation=out_activation, name='final_conv')(out_branch)
     model = models.Model(inputs=[base_in], outputs=[output], name='vgg19-unet')
     return model
 

@@ -22,8 +22,8 @@ def parse_tfrecord(example_proto, features=None, labels=None, patch_shape=None):
 def to_tuple(dataset, n_features=None):
     features = dataset[:, :, :, :n_features]
     labels = dataset[:, :, :, n_features:]
-    labelsInverse = tf.math.abs(labels-1)
-    labels = tf.concat([labelsInverse,labels],axis=-1)
+    labels_inverse = tf.math.abs(labels - 1)
+    labels = tf.concat([labels_inverse, labels], axis=-1)
     return features, labels
 
 

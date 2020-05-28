@@ -10,7 +10,7 @@ import kerastuner as kt
 
 
 # specify directory as data io info
-BASEDIR = Path('/Users/biplovbhandari/Works/SIG/hydrafloods')
+BASEDIR = Path('/home/ubuntu/hydrafloods')
 TRAINING_DIR = BASEDIR / 'training_patches'
 TESTING_DIR = BASEDIR / 'testing_patches'
 VALIDATION_DIR = BASEDIR / 'validation_patches'
@@ -108,7 +108,7 @@ tuner = kt.RandomSearch(
     max_trials=10,
     executions_per_trial=2,
     seed=0,
-    directory=str(MODEL_SAVE_DIR),
+    directory=str(MODEL_SAVE_DIR / 'model'),
     project_name='sentinel1-surface-water'
 )
 

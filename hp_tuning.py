@@ -117,6 +117,7 @@ early_stopping = keras.callbacks.EarlyStopping(
     monitor='val_loss', patience=5, verbose=0,
     mode='auto', restore_best_weights=True
 )
+tensorboard = keras.callbacks.TensorBoard(log_dir=str(MODEL_SAVE_DIR / 'logs'), write_images=True)
 
 # fit the model
 tuner.search(
@@ -125,7 +126,7 @@ tuner.search(
         steps_per_epoch=(TRAIN_SIZE // BATCH_SIZE),
         validation_data=testing,
         validation_steps=TEST_SIZE,
-        callbacks=[early_stopping]
+        callbacks=[early_stopping, tensorboard]
 )
 
 tuner.results_summary()

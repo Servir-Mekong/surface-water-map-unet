@@ -1,33 +1,40 @@
 # -*- coding: utf-8 -*-
 
+from dotenv import load_dotenv
+load_dotenv('.env')
+
+import ast
 import os
 import subprocess
-import time
 from pathlib import Path
 from tensorflow.python.tools import saved_model_utils
 
-PROJECT = 'servir-ee'
-BUCKET = 'mekong-tf'
+MODEL_CREATE = False
 
-MODEL_NAME = 'test_model'
-VERSION_NAME = f'v{int(time.time())}'
-print('Creating version: ' + VERSION_NAME)
+PROJECT = os.getenv('GCS_PROJECT')
+BUCKET = os.getenv('GCS_BUCKET')
+
+MODEL_NAME = 'mekong_sentinel1-surface-water_vgg16-unet'
 
 # specify directory as data io info
-BASEDIR = Path('/Users/biplovbhandari/Works/SIG')
-OUTPUT_DIR = BASEDIR / 'hydrafloods'
-MODEL_DIR = OUTPUT_DIR / 'to_push'
-EEIFIED_DIR_NAME = 'eeified-temp'
-EEIFIED_DIR = MODEL_DIR / EEIFIED_DIR_NAME
+BASEDIR = Path(os.getenv('BASEDIR'))
+OUTPUT_DIR = BASEDIR / 'output'
+model_dir_name = '2020_05_29_V4'
+MODEL_SAVE_DIR = OUTPUT_DIR / model_dir_name
+EEIFIED_DIR = MODEL_SAVE_DIR / 'eeified'
+GCS_EEIFIED_DIR = os.getenv('GCS_EEIFIED_DIR')
 
-LABEL = 'class'
+VERSION_NAME = f'v{model_dir_name}'
+print('Creating version: ' + VERSION_NAME)
+
+LABELS = ast.literal_eval(os.getenv('LABELS'))
 
 try:
     os.mkdir(EEIFIED_DIR)
 except FileExistsError:
     print(f'> {EEIFIED_DIR} exists, skipping creation...')
 
-meta_graph_def = saved_model_utils.get_meta_graph_def(str(MODEL_DIR), 'serve')
+meta_graph_def = saved_model_utils.get_meta_graph_def(str(MODEL_SAVE_DIR), 'serve')
 inputs = meta_graph_def.signature_def['serving_default'].inputs
 outputs = meta_graph_def.signature_def['serving_default'].outputs
 
@@ -48,8 +55,8 @@ set_project = f'earthengine set_project {PROJECT}'
 result = subprocess.check_output(set_project, shell=True)
 print(result)
 
-model_prepare = f'earthengine model prepare --source_dir {MODEL_DIR} --dest_dir {EEIFIED_DIR} ' \
-                f'--input "{{\\"{input_name}\\":\\"array\\"}}" --output "{{\\"{output_name}\\":\\"{LABEL}\\"}}"'
+model_prepare = f'earthengine model prepare --source_dir {MODEL_SAVE_DIR} --dest_dir {EEIFIED_DIR} ' \
+                f'--input "{{\\"{input_name}\\":\\"array\\"}}" --output "{{\\"{output_name}\\":\\"{LABELS[0]}\\"}}"'
 result = subprocess.check_output(model_prepare, shell=True)
 print(result)
 
@@ -60,19 +67,19 @@ if len(files) == 0:
     EEIFIED_DIR = EEIFIED_DIR / temp_dir
 
 # copy the eeified to the google bucket
-GS_EEIFIED_PATH = f'gs://{BUCKET}/{EEIFIED_DIR_NAME}'
+GS_EEIFIED_PATH = f'gs://{BUCKET}/{GCS_EEIFIED_DIR}/{model_dir_name}'
 copy = f'gsutil -m cp -R {EEIFIED_DIR} {GS_EEIFIED_PATH}'
 result = subprocess.check_output(copy, shell=True)
 print(result)
 
-# create a model
-ai_model_create = f'gcloud ai-platform models create {MODEL_NAME} --project {PROJECT}'
-result = subprocess.check_output(ai_model_create, shell=True)
-print(result)
+if MODEL_CREATE:
+    # create a model
+    ai_model_create = f'gcloud ai-platform models create {MODEL_NAME} --project {PROJECT}'
+    result = subprocess.check_output(ai_model_create, shell=True)
+    print(result)
 
 # provide staging-bucket if pushing from local directory
 # be careful with the python version
-
 ai_version_create = f'gcloud ai-platform versions create {VERSION_NAME} --project {PROJECT} --model {MODEL_NAME} ' \
                     f'--origin {str(GS_EEIFIED_PATH)} --runtime-version=2.1  --python-version=3.7'
 result = subprocess.check_output(ai_version_create, shell=True)

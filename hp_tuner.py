@@ -1,42 +1,57 @@
 # -*- coding: utf-8 -*-
 
+from dotenv import load_dotenv
+load_dotenv('.env')
+
+import ast
+import datetime
 import glob
-from pathlib import Path
-from functools import partial
-from model import dataio, model
-import tensorflow as tf
-from tensorflow import keras
+import os
 import kerastuner as kt
+import tensorflow as tf
+from functools import partial
+from pathlib import Path
+from tensorflow import keras
+
+from model import dataio, model
 
 
 # specify directory as data io info
-BASEDIR = Path('/home/ubuntu/hydrafloods')
+BASEDIR = Path(os.getenv('BASEDIR'))
 TRAINING_DIR = BASEDIR / 'training_patches'
 TESTING_DIR = BASEDIR / 'testing_patches'
 VALIDATION_DIR = BASEDIR / 'validation_patches'
 OUTPUT_DIR = BASEDIR / 'output'
-MODEL_SAVE_DIR = OUTPUT_DIR / 'hyperopt-attempt1'
+
+today = datetime.date.today().strftime('%Y_%m_%d')
+iterator = 1
+while True:
+    model_dir_name = f'hypertuner_{today}_V{iterator}'
+    MODEL_SAVE_DIR = OUTPUT_DIR / model_dir_name
+    try:
+        os.mkdir(MODEL_SAVE_DIR)
+    except FileExistsError:
+        print(f'> {MODEL_SAVE_DIR} exists, creating another version...')
+        iterator += 1
+        continue
+    break
 
 # specify some data structure
-FEATURES = ['VH', 'VV']
-LABELS = ['class']
+FEATURES = ast.literal_eval(os.getenv('FEATURES'))
+LABELS = ast.literal_eval(os.getenv('LABELS'))
 
 # patch size for training
-KERNEL_SIZE = 256
-PATCH_SHAPE = (KERNEL_SIZE, KERNEL_SIZE)
+PATCH_SHAPE = ast.literal_eval(os.getenv('PATCH_SHAPE'))
 
 # Sizes of the training and evaluation datasets.
-# based on sizes of exported data and spliting performed earlier
-# ~13542 samples
-# ~70% are training, ~20% are testing, ~10% are validation
-TRAIN_SIZE = 9480
-TEST_SIZE = 2709
-VAL_SIZE = 1354
+TRAIN_SIZE = int(os.getenv('TRAIN_SIZE'))
+TEST_SIZE = int(os.getenv('TEST_SIZE'))
+VAL_SIZE = int(os.getenv('VAL_SIZE'))
 
 # Specify model training parameters.
-BATCH_SIZE = 64
-EPOCHS = 50
-BUFFER_SIZE = 9500
+BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
+EPOCHS = int(os.getenv('EPOCHS'))
+BUFFER_SIZE = int(os.getenv('BUFFER_SIZE'))
 
 # get list of files for training, testing and eval
 training_files = glob.glob(str(TRAINING_DIR) + '/*')
@@ -50,17 +65,17 @@ training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE, BAT
 # testing is batched by 1 and repeated
 testing = dataio.get_dataset(testing_files, FEATURES, LABELS, PATCH_SHAPE, 1).repeat()
 # eval is batched by 1
-eval = dataio.get_dataset(validation_files, FEATURES, LABELS, PATCH_SHAPE, 1)
+validation = dataio.get_dataset(validation_files, FEATURES, LABELS, PATCH_SHAPE, 1)
 
 # get distributed strategy and apply distribute i/o and model build
 strategy = tf.distribute.MirroredStrategy()
 
 # define tensor input shape and number of classes
 in_shape = PATCH_SHAPE + (len(FEATURES),)
-out_classes = len(LABELS)
+out_classes = int(os.getenv('OUT_CLASSES_NUM'))
 
 # partial function to pass keywords to for hyper-parameter tuning
-get_model = partial(model.get_model, in_shape=in_shape, out_classes=2)
+get_model = partial(model.get_model, in_shape=in_shape, out_classes=out_classes)
 
 
 # function to build model for hp tuning

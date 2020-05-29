@@ -1,0 +1,3 @@
+training-patches: gs://mekong-tf/edgeWater/training
+testing-patches: gs://mekong-tf/edgeWater/testing
+validation-patches: gs://mekong-tf/edgeWater/validation

@@ -120,7 +120,7 @@ def build_tuner(hp):
 tuner = kt.RandomSearch(
     build_tuner,
     objective=kt.Objective('val_f1_m', direction='max'),
-    max_trials=10,
+    max_trials=500,
     executions_per_trial=2,
     seed=0,
     directory=str(MODEL_SAVE_DIR / 'model'),

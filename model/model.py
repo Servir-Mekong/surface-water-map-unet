@@ -154,13 +154,13 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1,
 
 
 def build(*args, optimizer=None, loss=None, metrics=None, distributed_strategy=None, **kwargs):
-    if optimizer is None:
-        learning_rate = kwargs.get('learning_rate', 0.001)
+    learning_rate = kwargs.get('learning_rate', 0.001)
+    if optimizer == 'sgd_momentum':
+        optimizer = keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.9)
+    else:
         optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
 
     if loss is None:
-        # loss = dice_loss
-        # loss = bce_dice_loss
         loss = keras.losses.BinaryCrossentropy(from_logits=True)
 
     if metrics is None:

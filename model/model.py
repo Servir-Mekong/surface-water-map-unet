@@ -7,7 +7,6 @@ from tensorflow.keras import models
 from tensorflow.keras import layers
 from tensorflow.keras import backend as K
 
-
 conv_layer = partial(layers.Conv2D,
                      padding='same',
                      kernel_initializer='he_normal',
@@ -40,17 +39,20 @@ def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=
 def add_features(input_tensor):
     def normalized_difference(c1, c2, name='nd'):
         nd_f = layers.Lambda(lambda x: ((x[0] - x[1]) / (x[0] + x[1])), name=name)([c1, c2])
-        nd_inf = layers.Lambda(lambda x: ((x[0] - x[1]) / (x[0] + x[1] + 1e-7)), name=f'{name}_inf')([c1, c2])
+        # nd_inf = layers.Lambda(lambda x: ((x[0] - x[1]) / (x[0] + x[1] + 1e-7)), name=f'{name}_inf')([c1, c2])
+        nd_inf = layers.Lambda(lambda x: (x[0] - x[1]), name=f'{name}_inf')([c1, c2])
         return tf.where(tf.math.is_finite(nd_f), nd_f, nd_inf)
 
     def ratio(c1, c2, name='ratio'):
         ratio_f = layers.Lambda(lambda x: x[0] / x[1], name=name)([c1, c2])
-        ratio_inf = layers.Lambda(lambda x: x[0] / (x[1] + 1e-7), name=f'{name}_inf')([c1, c2])
+        # ratio_inf = layers.Lambda(lambda x: x[0] / (x[1] + 1e-7), name=f'{name}_inf')([c1, c2])
+        ratio_inf = layers.Lambda(lambda x: x[0], name=f'{name}_inf')([c1, c2])
         return tf.where(tf.math.is_finite(ratio_f), ratio_f, ratio_inf)
 
     def nvi(c1, c2, name='nvi'):
         nvi_f = layers.Lambda(lambda x: x[0] / (x[0] + x[1]), name=name)([c1, c2])
-        nvi_inf = layers.Lambda(lambda x: x[0] / (x[0] + x[1] + 1e-7), name=f'{name}_inf')([c1, c2])
+        # nvi_inf = layers.Lambda(lambda x: x[0] / (x[0] + x[1] + 1e-7), name=f'{name}_inf')([c1, c2])
+        nvi_inf = layers.Lambda(lambda x: x[0], name=f'{name}_inf')([c1, c2])
         return tf.where(tf.math.is_finite(nvi_f), nvi_f, nvi_inf)
 
     nd = normalized_difference(input_tensor[:, :, :, 0:1], input_tensor[:, :, :, 1:2])  # vh, vv
@@ -98,7 +100,7 @@ def bce_dice_loss(y_true, y_pred):
     return keras.losses.binary_crossentropy(y_true, y_pred, label_smoothing=0.2) + dice_loss(y_true, y_pred)
 
 
-def bce_loss(y_true,y_pred):
+def bce_loss(y_true, y_pred):
     return keras.losses.binary_crossentropy(y_true, y_pred, label_smoothing=0.2)
 
 
@@ -127,7 +129,7 @@ def get_model(in_shape, out_classes, dropout_rate=0.2, noise=1,
         i=2, rate=dropout_rate, activation=activation, combo=combo, **kwargs
     )
     decoder3 = decoder_block(
-        decoder2, concat_tensor=concat_tensors[2], n_filters=256, n_convs=2,  noise=noise,
+        decoder2, concat_tensor=concat_tensors[2], n_filters=256, n_convs=2, noise=noise,
         i=3, rate=dropout_rate, activation=activation, combo=combo, **kwargs
     )
     decoder4 = decoder_block(

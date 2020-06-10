@@ -71,7 +71,7 @@ validation = dataio.get_dataset(validation_files, FEATURES, LABELS, PATCH_SHAPE,
 strategy = tf.distribute.MirroredStrategy()
 
 # define tensor input shape and number of classes
-in_shape = PATCH_SHAPE + (len(FEATURES),)
+in_shape = (None, None) + (len(FEATURES),)
 out_classes = int(os.getenv('OUT_CLASSES_NUM'))
 
 # partial function to pass keywords to for hyper-parameter tuning

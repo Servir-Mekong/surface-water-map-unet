@@ -35,6 +35,7 @@ while True:
         iterator += 1
         continue
     break
+print('***************************************************************************')
 
 # specify some data structure
 FEATURES = ast.literal_eval(os.getenv('FEATURES'))
@@ -51,10 +52,17 @@ VAL_SIZE = int(os.getenv('VAL_SIZE'))
 # Specify model training parameters.
 BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
 EPOCHS = int(os.getenv('EPOCHS'))
+RAMPUP_EPOCHS = int(os.getenv('RAMPUP_EPOCHS'))
+SUSTAIN_EPOCHS = int(os.getenv('SUSTAIN_EPOCHS'))
+
 BUFFER_SIZE = int(os.getenv('BUFFER_SIZE'))
 
 # Rates
+USE_ADJUSTED_LR = bool(os.getenv('USE_ADJUSTED_LR'))
 LEARNING_RATE = float(os.getenv('LEARNING_RATE'))
+MAX_LR = float(os.getenv('MAX_LR'))
+MID_LR = float(os.getenv('MID_LR'))
+MIN_LR = float(os.getenv('MIN_LR'))
 DROPOUT_RATE = float(os.getenv('DROPOUT_RATE'))
 
 # other params w/ notes
@@ -98,6 +106,21 @@ early_stopping = callbacks.EarlyStopping(
 )
 tensorboard = callbacks.TensorBoard(log_dir=str(MODEL_SAVE_DIR / 'logs'), write_images=True)
 
+def lr_scheduler(epoch):
+    if epoch < RAMPUP_EPOCHS:
+        return MAX_LR
+    elif epoch < RAMPUP_EPOCHS + SUSTAIN_EPOCHS:
+        return MID_LR
+    else:
+        return MIN_LR
+
+
+lr_callback = callbacks.LearningRateScheduler(lambda epoch: lr_scheduler(epoch), verbose=True)
+
+model_callbacks = [model_checkpoint, tensorboard, early_stopping]
+if USE_ADJUSTED_LR:
+    model_callbacks.append(lr_callback)
+
 # fit the model
 history = my_model.fit(
     x=training,
@@ -105,7 +128,7 @@ history = my_model.fit(
     steps_per_epoch=(TRAIN_SIZE // BATCH_SIZE),
     validation_data=testing,
     validation_steps=TEST_SIZE,
-    callbacks=[model_checkpoint, tensorboard, early_stopping],
+    callbacks=model_callbacks,
 )
 
 # check how the model trained
@@ -120,6 +143,13 @@ with open(f'{str(MODEL_SAVE_DIR)}/parameters.txt', 'w') as f:
     f.write(f'EPOCHS: {EPOCHS}\n')
     f.write(f'BUFFER_SIZE: {BUFFER_SIZE}\n')
     f.write(f'LEARNING_RATE: {LEARNING_RATE}\n')
+    if USE_ADJUSTED_LR:
+        f.write(f'USE_ADJUSTED_LR: {USE_ADJUSTED_LR}\n')
+        f.write(f'MAX_LR: {MAX_LR}\n')
+        f.write(f'MID_LR: {MID_LR}\n')
+        f.write(f'MIN_LR: {MIN_LR}\n')
+        f.write(f'RAMPUP_EPOCHS: {RAMPUP_EPOCHS}\n')
+        f.write(f'SUSTAIN_EPOCHS: {SUSTAIN_EPOCHS}\n')
     f.write(f'DROPOUT_RATE: {DROPOUT_RATE}\n')
     f.write(f'ACTIVATION_FN: {ACTIVATION_FN}\n')
     f.write(f'FEATURES: {FEATURES}\n')

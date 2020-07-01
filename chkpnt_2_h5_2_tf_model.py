@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from dotenv import load_dotenv
+
 load_dotenv('.env')
 
 import ast
@@ -8,12 +9,20 @@ import os
 import tensorflow as tf
 
 from pathlib import Path
-from model import dataio, model
+from model import model
+
+###############################################################################
+# DONT FORGET TO CHANGE THE LEARNING_RATE AND THE LOSS FUNCTION BELOW #########
+###############################################################################
+
+print('###############################################################################')
+print('# DONT FORGET TO CHANGE THE LEARNING_RATE AND THE LOSS FUNCTION BELOW #########')
+print('###############################################################################')
 
 # specify directory as data io info
-BASEDIR = Path('/Users/biplovbhandari/Works/SIG/hydrafloods')
-MODEL_DIR = BASEDIR / 'trial_d15f0fcb99e1c157b59cb0e9407851ed'
-CHECKPOINT_DIR = MODEL_DIR / 'd15f0fcb99e1c157b59cb0e9407851ed' / 'checkpoint'
+BASEDIR = Path('/Users/biplovbhandari/Works/SIG/hydrafloods/output')
+MODEL_DIR = BASEDIR / 'trial_469ae9d7b6c82488deb9be9c0a0a25e7'
+CHECKPOINT_DIR = MODEL_DIR / '469ae9d7b6c82488deb9be9c0a0a25e7' / 'checkpoint'
 H5_MODEL = MODEL_DIR / 'tf-model-h5'
 TF_MODEL_DIR = MODEL_DIR / 'tf-model'
 
@@ -25,9 +34,8 @@ except FileExistsError:
 # specify some data structure
 FEATURES = ast.literal_eval(os.getenv('FEATURES'))
 
-LEARNING_RATE = 0.001
-LOSS = model.dice_loss
-
+LEARNING_RATE = 0.0001
+LOSS = model.bce_loss
 
 in_shape = (None, None) + (len(FEATURES),)
 out_classes = int(os.getenv('OUT_CLASSES_NUM'))

@@ -9,19 +9,20 @@ import subprocess
 from pathlib import Path
 from tensorflow.python.tools import saved_model_utils
 
-MODEL_CREATE = False
+MODEL_CREATE = True
 
 PROJECT = os.getenv('GCS_PROJECT')
 BUCKET = os.getenv('GCS_BUCKET')
 
-MODEL_NAME = 'mekong_sentinel1-surface-water_vgg16-unet'
+model_dir_name = '469ae9d7b6c82488deb9be9c0a0a25e7'
+
+MODEL_NAME = f'trail_{model_dir_name}'
 
 # specify directory as data io info
 BASEDIR = Path(os.getenv('BASEDIR'))
-OUTPUT_DIR = BASEDIR / 'output'
-model_dir_name = '2020_05_29_V4'
-MODEL_SAVE_DIR = OUTPUT_DIR / model_dir_name
-EEIFIED_DIR = MODEL_SAVE_DIR / 'eeified'
+OUTPUT_DIR = BASEDIR / 'output' / f'trial_{model_dir_name}'
+MODEL_SAVE_DIR = OUTPUT_DIR / 'tf-model'
+EEIFIED_DIR = OUTPUT_DIR / 'eeified'
 GCS_EEIFIED_DIR = os.getenv('GCS_EEIFIED_DIR')
 
 VERSION_NAME = f'v{model_dir_name}'
@@ -67,7 +68,7 @@ if len(files) == 0:
     EEIFIED_DIR = EEIFIED_DIR / temp_dir
 
 # copy the eeified to the google bucket
-GS_EEIFIED_PATH = f'gs://{BUCKET}/{GCS_EEIFIED_DIR}/{model_dir_name}'
+GS_EEIFIED_PATH = f'gs://{BUCKET}/{GCS_EEIFIED_DIR}/{MODEL_NAME}'
 copy = f'gsutil -m cp -R {EEIFIED_DIR} {GS_EEIFIED_PATH}'
 result = subprocess.check_output(copy, shell=True)
 print(result)

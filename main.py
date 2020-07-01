@@ -58,7 +58,7 @@ SUSTAIN_EPOCHS = int(os.getenv('SUSTAIN_EPOCHS'))
 BUFFER_SIZE = int(os.getenv('BUFFER_SIZE'))
 
 # Rates
-USE_ADJUSTED_LR = bool(os.getenv('USE_ADJUSTED_LR'))
+USE_ADJUSTED_LR = os.getenv('USE_ADJUSTED_LR') == 'True'
 LEARNING_RATE = float(os.getenv('LEARNING_RATE'))
 MAX_LR = float(os.getenv('MAX_LR'))
 MID_LR = float(os.getenv('MID_LR'))

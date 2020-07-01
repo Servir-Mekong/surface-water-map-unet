@@ -12,6 +12,7 @@ import tensorflow as tf
 from functools import partial
 from pathlib import Path
 from tensorflow import keras
+from tensorflow.keras import callbacks
 
 from model import dataio, model
 
@@ -48,9 +49,20 @@ TRAIN_SIZE = int(os.getenv('TRAIN_SIZE'))
 TEST_SIZE = int(os.getenv('TEST_SIZE'))
 VAL_SIZE = int(os.getenv('VAL_SIZE'))
 
+# Rates
+USE_ADJUSTED_LR = os.getenv('USE_ADJUSTED_LR') == 'True'
+LEARNING_RATE = float(os.getenv('LEARNING_RATE'))
+MAX_LR = float(os.getenv('MAX_LR'))
+MID_LR = float(os.getenv('MID_LR'))
+MIN_LR = float(os.getenv('MIN_LR'))
+DROPOUT_RATE = float(os.getenv('DROPOUT_RATE'))
+
 # Specify model training parameters.
 BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
 EPOCHS = int(os.getenv('EPOCHS'))
+RAMPUP_EPOCHS = int(os.getenv('RAMPUP_EPOCHS'))
+SUSTAIN_EPOCHS = int(os.getenv('SUSTAIN_EPOCHS'))
+
 BUFFER_SIZE = int(os.getenv('BUFFER_SIZE'))
 
 # get list of files for training, testing and eval
@@ -99,12 +111,14 @@ def build_tuner(hp):
 
         optimizer_options = {
             'sgd_momentum': keras.optimizers.SGD(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5]), momentum=0.9),
-            'adam': keras.optimizers.Adam(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5])),
+            'adam_variable': keras.optimizers.Adam(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5])),
+            'adam_fixed': keras.optimizers.Adam(),
         }
 
         # compile model
         my_model.compile(
-            optimizer=optimizer_options[hp.Choice('optimizer', ['sgd_momentum', 'adam'])],
+            #optimizer=optimizer_options[hp.Choice('optimizer', ['sgd_momentum', 'adam_variable'])],
+            optimizer=optimizer_options['adam_fixed'],
             loss=loss_options[hp.Choice('loss', ['bce', 'dice', 'bce_dice'])],
             metrics=[
                 keras.metrics.categorical_accuracy,
@@ -121,7 +135,7 @@ tuner = kt.RandomSearch(
     build_tuner,
     objective=kt.Objective('val_f1_m', direction='max'),
     max_trials=500,
-    executions_per_trial=2,
+    executions_per_trial=1,
     seed=0,
     directory=str(MODEL_SAVE_DIR / 'model'),
     project_name='sentinel1-surface-water'
@@ -134,6 +148,22 @@ early_stopping = keras.callbacks.EarlyStopping(
 )
 tensorboard = keras.callbacks.TensorBoard(log_dir=str(MODEL_SAVE_DIR / 'logs'), write_images=True)
 
+def lr_scheduler(epoch):
+    if epoch < RAMPUP_EPOCHS:
+        return MAX_LR
+    elif epoch < RAMPUP_EPOCHS + SUSTAIN_EPOCHS:
+        return MID_LR
+    else:
+        return MIN_LR
+lr_callback = callbacks.LearningRateScheduler(lambda epoch: lr_scheduler(epoch), verbose=True)
+
+model_callbacks = [early_stopping, tensorboard]
+if USE_ADJUSTED_LR:
+    print('comes here')
+    model_callbacks.append(lr_callback)
+else:
+    print('does not comes here')
+
 # fit the model
 tuner.search(
         x=training,
@@ -141,7 +171,7 @@ tuner.search(
         steps_per_epoch=(TRAIN_SIZE // BATCH_SIZE),
         validation_data=testing,
         validation_steps=TEST_SIZE,
-        callbacks=[early_stopping, tensorboard]
+        callbacks=model_callbacks
 )
 
 tuner.results_summary()

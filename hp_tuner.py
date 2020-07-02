@@ -143,7 +143,7 @@ tuner = kt.RandomSearch(
 
 # set early stopping to prevent long running models
 early_stopping = keras.callbacks.EarlyStopping(
-    monitor='val_loss', patience=5, verbose=0,
+    monitor='val_loss', patience=7, verbose=0,
     mode='auto', restore_best_weights=True
 )
 tensorboard = keras.callbacks.TensorBoard(log_dir=str(MODEL_SAVE_DIR / 'logs'), write_images=True)
@@ -159,10 +159,7 @@ lr_callback = callbacks.LearningRateScheduler(lambda epoch: lr_scheduler(epoch),
 
 model_callbacks = [early_stopping, tensorboard]
 if USE_ADJUSTED_LR:
-    print('comes here')
     model_callbacks.append(lr_callback)
-else:
-    print('does not comes here')
 
 # fit the model
 tuner.search(

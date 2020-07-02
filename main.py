@@ -101,7 +101,7 @@ model_checkpoint = callbacks.ModelCheckpoint(
     mode='min', verbose=1, save_weights_only=True
 )
 early_stopping = callbacks.EarlyStopping(
-    monitor=CALLBACK_PARAMETER, patience=5, verbose=0,
+    monitor=CALLBACK_PARAMETER, patience=7, verbose=0,
     mode='auto', restore_best_weights=True
 )
 tensorboard = callbacks.TensorBoard(log_dir=str(MODEL_SAVE_DIR / 'logs'), write_images=True)

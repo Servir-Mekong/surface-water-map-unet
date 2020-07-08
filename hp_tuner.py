@@ -118,7 +118,7 @@ def build_tuner(hp):
         # compile model
         my_model.compile(
             #optimizer=optimizer_options[hp.Choice('optimizer', ['sgd_momentum', 'adam_variable'])],
-            optimizer=optimizer_options['adam_fixed'],
+            optimizer='adam',
             loss=loss_options[hp.Choice('loss', ['bce', 'dice', 'bce_dice'])],
             metrics=[
                 keras.metrics.categorical_accuracy,
@@ -134,7 +134,7 @@ def build_tuner(hp):
 tuner = kt.RandomSearch(
     build_tuner,
     objective=kt.Objective('val_f1_m', direction='max'),
-    max_trials=500,
+    max_trials=20,
     executions_per_trial=1,
     seed=0,
     directory=str(MODEL_SAVE_DIR / 'model'),

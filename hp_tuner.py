@@ -112,7 +112,6 @@ def build_tuner(hp):
         optimizer_options = {
             'sgd_momentum': keras.optimizers.SGD(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5]), momentum=0.9),
             'adam_variable': keras.optimizers.Adam(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5])),
-            'adam_fixed': keras.optimizers.Adam(),
         }
 
         # compile model
@@ -134,7 +133,7 @@ def build_tuner(hp):
 tuner = kt.RandomSearch(
     build_tuner,
     objective=kt.Objective('val_f1_m', direction='max'),
-    max_trials=20,
+    max_trials=10,
     executions_per_trial=1,
     seed=0,
     directory=str(MODEL_SAVE_DIR / 'model'),

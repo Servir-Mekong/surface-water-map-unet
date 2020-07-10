@@ -70,9 +70,10 @@ ACTIVATION_FN = os.getenv('ACTIVATION_FN')
 CALLBACK_PARAMETER = os.getenv('CALLBACK_PARAMETER')
 COMBINATION = os.getenv('COMBINATION')
 
+# get list of files for training, testing and eval
 training_files = glob.glob(str(TRAINING_DIR) + '/*')
-testing_files = glob.glob(str(TRAINING_DIR) + '/*')
-validation_files = glob.glob(str(TRAINING_DIR) + '/*')
+testing_files = glob.glob(str(TESTING_DIR) + '/*')
+validation_files = glob.glob(str(VALIDATION_DIR) + '/*')
 
 # get training, testing, and eval TFRecordDataset
 # training is batched, shuffled, transformed, and repeated

@@ -94,7 +94,9 @@ get_model = partial(model.get_model, in_shape=in_shape, out_classes=out_classes)
 # accepts hp tuning instance to select variables
 def build_tuner(hp):
     with strategy.scope():
+        # Don't uncomment if not using
         # build the model with parameters
+
         # dropout_rate = hp.Float('dropout_rate', min_value=0.1, max_value=0.5, step=0.05),
         # noise = hp.Float('noise', min_value=0.2, max_value=2.0, step=0.2),
         # activation = hp.Choice('activation', values=['relu', 'elu']),
@@ -109,10 +111,13 @@ def build_tuner(hp):
             'bce_dice': model.bce_dice_loss,
         }
 
-        optimizer_options = {
-            'sgd_momentum': keras.optimizers.SGD(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5]), momentum=0.9),
-            'adam_variable': keras.optimizers.Adam(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5])),
-        }
+        # explicitly comment them if not using, hp tuner does not take the parameters
+        # defined in the compile if these are not commented. :'(
+
+        # optimizer_options = {
+        #     'sgd_momentum': keras.optimizers.SGD(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5]), momentum=0.9),
+        #     'adam_variable': keras.optimizers.Adam(hp.Choice('learning_rate', [1e-2, 1e-3, 1e-4, 1e-5])),
+        # }
 
         # compile model
         my_model.compile(

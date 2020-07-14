@@ -12,9 +12,9 @@ from pathlib import Path
 from model import model
 
 # specify directory as data io info
-BASEDIR = Path('/Users/biplovbhandari/Works/SIG/hydrafloods/output')
-MODEL_DIR = BASEDIR / 'trial_469ae9d7b6c82488deb9be9c0a0a25e7'
-CHECKPOINT_DIR = MODEL_DIR / '469ae9d7b6c82488deb9be9c0a0a25e7' / 'checkpoint'
+BASEDIR = Path('/mnt/hydrafloods/output/jrc_adjusted_LR_2020_07_13_V1/model/sentinel1-surface-water')
+MODEL_DIR = BASEDIR / 'trial_6ba0bc0ef8458bf43280b5814775bd2b'
+CHECKPOINT_DIR = MODEL_DIR / 'checkpoints' / 'epoch_0' / 'checkpoint'
 H5_MODEL = MODEL_DIR / 'tf-model-h5'
 TF_MODEL_DIR = MODEL_DIR / 'tf-model'
 

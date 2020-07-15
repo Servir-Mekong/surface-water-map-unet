@@ -10,20 +10,23 @@ from pathlib import Path
 from tensorflow.python.tools import saved_model_utils
 
 MODEL_CREATE = True
+COPY_CHECKPOINT = True
 
 PROJECT = os.getenv('GCS_PROJECT')
 BUCKET = os.getenv('GCS_BUCKET')
 
 model_dir_name = '469ae9d7b6c82488deb9be9c0a0a25e7'
 
-MODEL_NAME = f'trail_{model_dir_name}'
+MODEL_NAME = f'trial_{model_dir_name}'
 
 # specify directory as data io info
-BASEDIR = Path(os.getenv('BASEDIR'))
-OUTPUT_DIR = BASEDIR / 'output' / f'trial_{model_dir_name}'
+BASEDIR = Path('/mnt/hydrafloods/output/jrc_adjusted_LR_2020_07_13_V1/model/sentinel1-surface-water')
+OUTPUT_DIR = BASEDIR / f'trial_{model_dir_name}'
+CHECKPOINT_DIR = OUTPUT_DIR / 'checkpoints' / 'epoch_0'
 MODEL_SAVE_DIR = OUTPUT_DIR / 'tf-model'
 EEIFIED_DIR = OUTPUT_DIR / 'eeified'
 GCS_EEIFIED_DIR = os.getenv('GCS_EEIFIED_DIR')
+GCS_CHECKPOINT_DIR = os.getenv('GCS_CHECKPOINT_DIR')
 
 VERSION_NAME = f'v{model_dir_name}'
 print('Creating version: ' + VERSION_NAME)
@@ -34,6 +37,13 @@ try:
     os.mkdir(EEIFIED_DIR)
 except FileExistsError:
     print(f'> {EEIFIED_DIR} exists, skipping creation...')
+
+# copy the checkpoints
+if COPY_CHECKPOINT:
+    GS_CHECKPOINT_PATH = f'gs://{BUCKET}/{GCS_CHECKPOINT_DIR}/{model_dir_name}'
+    copy_chckpoint = f'gsutil -m cp -R {CHECKPOINT_DIR} {GS_CHECKPOINT_PATH}'
+    result = subprocess.check_output(copy_chckpoint, shell=True)
+    print(result)
 
 meta_graph_def = saved_model_utils.get_meta_graph_def(str(MODEL_SAVE_DIR), 'serve')
 inputs = meta_graph_def.signature_def['serving_default'].inputs

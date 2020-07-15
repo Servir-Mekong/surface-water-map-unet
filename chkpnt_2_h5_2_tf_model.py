@@ -29,8 +29,12 @@ in_shape = (None, None) + (len(FEATURES),)
 out_classes = int(os.getenv('OUT_CLASSES_NUM'))
 
 this_model = model.get_model(in_shape, out_classes)
-
-# open and save model
-this_model.load_weights(f'{str(H5_MODEL)}')
 print(this_model.summary())
+
+# open and save model as h5
+this_model.load_weights(f'{str(CHECKPOINT_DIR)}')
+tf.keras.models.save_model(this_model, str(H5_MODEL), save_format='h5')
+
+# open and save model as tf
+this_model.load_weights(f'{str(H5_MODEL)}')
 tf.keras.models.save_model(this_model, str(TF_MODEL_DIR), save_format='tf')

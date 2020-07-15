@@ -66,6 +66,7 @@ MIN_LR = float(os.getenv('MIN_LR'))
 DROPOUT_RATE = float(os.getenv('DROPOUT_RATE'))
 
 # other params w/ notes
+LOSS = model.bce_dice_loss
 ACTIVATION_FN = os.getenv('ACTIVATION_FN')
 CALLBACK_PARAMETER = os.getenv('CALLBACK_PARAMETER')
 COMBINATION = os.getenv('COMBINATION')
@@ -92,8 +93,9 @@ in_shape = (None, None) + (len(FEATURES),)
 out_classes = int(os.getenv('OUT_CLASSES_NUM'))
 
 # build the model and compile
-my_model = model.build(in_shape, out_classes, distributed_strategy=strategy, dropout_rate=DROPOUT_RATE,
-                       learning_rate=LEARNING_RATE, combo=COMBINATION, out_activation=ACTIVATION_FN)
+my_model = model.build(in_shape, out_classes, distributed_strategy=strategy,
+                       dropout_rate=DROPOUT_RATE, learning_rate=LEARNING_RATE,
+                       combo=COMBINATION, out_activation=ACTIVATION_FN, loss=LOSS)
 
 # define callbacks during training
 model_checkpoint = callbacks.ModelCheckpoint(

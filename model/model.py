@@ -166,20 +166,28 @@ def build(*args, optimizer=None, loss=None, metrics=None, distributed_strategy=N
     if loss is None:
         loss = keras.losses.BinaryCrossentropy(from_logits=True)
 
-    if metrics is None:
-        metrics = [
-            keras.metrics.categorical_accuracy,
-            keras.metrics.Precision(),
-            keras.metrics.Recall(),
-            dice_coef,
-            f1_m
-        ]
-
     if distributed_strategy is not None:
         with distributed_strategy.scope():
+            # metrics need to be in the same distributed strategy
+            if metrics is None:
+                metrics = [
+                    keras.metrics.categorical_accuracy,
+                    keras.metrics.Precision(),
+                    keras.metrics.Recall(),
+                    dice_coef,
+                    f1_m
+                ]
             model = get_model(*args, **kwargs)
             model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
     else:
+        if metrics is None:
+            metrics = [
+                keras.metrics.categorical_accuracy,
+                keras.metrics.Precision(),
+                keras.metrics.Recall(),
+                dice_coef,
+                f1_m
+            ]
         model = get_model(*args, **kwargs)
         model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 

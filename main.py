@@ -80,6 +80,13 @@ validation_files = glob.glob(str(VALIDATION_DIR) + '/*')
 # training is batched, shuffled, transformed, and repeated
 training = dataio.get_dataset(training_files, FEATURES, LABELS, PATCH_SHAPE, BATCH_SIZE,
                               buffer_size=BUFFER_SIZE, training=True).repeat()
+# for element in training:
+#     print(element)
+#     break
+#
+# iterator = iter(training)
+# print(f'get_next: {iterator.get_next()}')
+
 # testing is batched by 1 and repeated
 testing = dataio.get_dataset(testing_files, FEATURES, LABELS, PATCH_SHAPE, 1).repeat()
 # eval is batched by 1

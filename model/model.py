@@ -31,13 +31,15 @@ def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=
                 deconv = layers.add([deconv, concat_tensor], name=f'{name_prefix}{i}_residual')
             elif combo == 'concat':
                 deconv = layers.concatenate([deconv, concat_tensor], name=f'{name_prefix}{i}_concat')
-
     # Choose one
     up = layers.UpSampling2D(interpolation='bilinear', name=f'{name_prefix}{i}_upsamp')(deconv)
     # 2x2 stride 2
     # up = layers.Conv2DTranspose(n_filters, (2, 2), strides=(2, 2), padding='same', name=f'{name_prefix}{i}_upsamp')(deconv)
     # 4x4 stride 2
     # up = layers.Conv2DTranspose(n_filters, (4, 4), strides=(2, 2), padding='same', name=f'{name_prefix}{i}_upsamp')(deconv)
+    # resize convulation
+    # up = layers.UpSampling2D(size=(2, 2), interpolation='bilinear', name=f'{name_prefix}{i}_upsamp')(deconv)
+    # up = layers.Conv2D(filters=n_filters, kernel_size=(3, 3), strides=(1, 1), padding='same', name=f'{name_prefix}{i}_resize_conv')(up)
     return up
 
 

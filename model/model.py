@@ -33,7 +33,10 @@ def decoder_block(input_tensor, concat_tensor=None, n_filters=512, n_convs=2, i=
                 deconv = layers.concatenate([deconv, concat_tensor], name=f'{name_prefix}{i}_concat')
 
     # Choose one
+    # Bilinear upsampling
     up = layers.UpSampling2D(interpolation='bilinear', name=f'{name_prefix}{i}_upsamp')(deconv)
+    # Neighbour Neighbour upsampling
+    up = layers.UpSampling2D(interpolation='nearest', name=f'{name_prefix}{i}_upsamp')(deconv)
     # 2x2 stride 2
     # up = layers.Conv2DTranspose(n_filters, (2, 2), strides=(2, 2), padding='same', name=f'{name_prefix}{i}_upsamp')(deconv)
     # 4x4 stride 2
